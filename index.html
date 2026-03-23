@@ -39,6 +39,7 @@
                 ctx.clearRect(0, 0, 640, 480);
                 welcome_screen = false;
                 requestAnimationFrame(gameLoop);
+                setInterval(spawnEnemy, 2000)
             }
         }
         /**
@@ -172,7 +173,6 @@
             ctx.textAlign = 'center';
             ctx.fillText('READY PLAYER ONE?', 320, 240);
             draw_hero();
-            setInterval(spawnEnemy, 2000)
         }
         /**
          * Funkcja obsługi naciśnięcia przycisku
