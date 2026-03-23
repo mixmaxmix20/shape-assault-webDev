@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pl-PL">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Document</title>
+
+    <style>
+        #main {
+            width: 640px;
+            height: 480px;
+            margin: auto;
+            border: 1px solid black;
+            background-color: navajowhite;
+        }
+    </style>
+
+    <script>
+        let canvas;
+        let ctx;
+        let pos_x = 320, pos_y = 300;
+        let welcome_screen = true;
+        const keys = {}
+        let mouse_x = 0;
+        let mouse_y = 0;
+        const HERO_SPEED = 5
+        const PROJECTILE_SPEED = 10
+        const projectiles = [];
+
+        /**
+         * Funkcja czyszcząca ekran powitalny
+         */
+        function clear_welcome() {
+            if (welcome_screen) {
+                ctx.clearRect(0, 0, 640, 480);
+                welcome_screen = false;
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        /**
+         * Funkcja rysująca bohatera na tkaninie
+         */
+        function draw_hero() {
+            const angle = Math.atan2(mouse_y - pos_y, mouse_x - pos_x);
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 0, 0, 1)';
+            ctx.translate(pos_x, pos_y);
+            ctx.rotate(angle);
+            ctx.fillRect(-5, -15, 10, 30);
+            ctx.restore();
+        }
+
+        /**
+         * Funkcja rysująca pociski na tkaninie
+         */
+        function draw_projectile(p) {
+            ctx.save();
+            ctx.fillStyle = 'rgb(0,81,255)';
+            ctx.translate(p.x, p.y);
+            ctx.fillRect(-5, -15, 5, 5)
+            ctx.restore();
+        }
+
+        /**
+         * Funkcja aktualizująca pozycje pocisków na tkaninie
+         */
+        function update_projectiles() {
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i]
+                p.x += Math.cos(p.angle) * p.speed
+                p.y += Math.sin(p.angle) * p.speed
+
+                if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {}
+            }
+        }
+
+        /**
+         * Funkcja do obsługi poruszania się postaci
+         */
+        function handleMovement() {
+            const left = keys[37] || keys[65]
+            const up = keys[38] || keys[87]
+            const right = keys[39] || keys[68]
+            const down = keys[40] || keys[83]
+            let speed
+
+            const diagonal = (left || right) && (up || down)
+            if (diagonal) {
+                speed = HERO_SPEED / Math.sqrt(2)
+            } else {
+                speed = HERO_SPEED
+            }
+
+            if (left) {
+                pos_x -= speed
+            }
+            if (right) {
+                pos_x += speed
+            }
+            if (up) {
+                pos_y -= speed
+            }
+            if (down) {
+                pos_y += speed
+            }
+        }
+
+        /**
+         * Funkcja wywoływana cyklicznie przerysowująca tkaninę
+         */
+        function redraw() {
+            ctx.clearRect(0, 0, 640, 480);
+            handleMovement()
+            draw_hero();
+            update_projectiles();
+            for (const p of projectiles) {
+                draw_projectile(p);
+            }
+        }
+        /**
+         * Funkcja inicjalizująca grę i tworząca ekran powitalny
+         */
+        function init() {
+            window.addEventListener("keydown", keyDownListener);
+            window.addEventListener("keyup", keyUpListener);
+            window.addEventListener("mousemove", mouseMovementListener);
+            window.addEventListener("click", mouseClickListener);
+            canvas = document.getElementById('game');
+            ctx = canvas.getContext('2d');
+            ctx.font = '48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('READY PLAYER ONE?', 320, 240);
+            draw_hero();
+        }
+        /**
+         * Funkcja obsługi naciśnięcia przycisku
+         */
+        function keyDownListener(e) {
+            keys[e.keyCode] = true;
+            clear_welcome();
+        }
+
+        /**
+         * Funkcja obsługi wyciśnięcia przycisku
+         */
+        function keyUpListener(e) {
+            keys[e.keyCode] = false;
+        }
+
+        /**
+         * Funkcja obsługi ruchu myszy
+         */
+        function mouseMovementListener(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouse_x = e.clientX - rect.left;
+            mouse_y = e.clientY - rect.top;
+        }
+
+        /**
+         * Funkcja obsługi naciśnięcia przycisku myszy
+         */
+        function mouseClickListener() {
+            clear_welcome()
+            const angle = Math.atan2(mouse_y - pos_y, mouse_x - pos_x);
+            projectiles.push({
+                x: pos_x,
+                y: pos_y,
+                angle: angle,
+                speed: PROJECTILE_SPEED
+            })
+        }
+
+        /**
+         * Główna pętla gry
+         */
+        function gameLoop() {
+            redraw()
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</head>
+
+<body onload="init()">
+    <div id="main">
+        <canvas id="game" width="640" height="480">
+            Zacznij w końcu używać współczesnej przeglądarki!
+        </canvas>
+    </div>
+</body>
+
+</html>
