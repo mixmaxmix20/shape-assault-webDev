@@ -27,6 +27,7 @@
         let mouse_y = 0;
         const HERO_SPEED = 3
         let hero_hp = 100
+        const HERO_SAFE_ZONE = 150;
         const PROJECTILE_SPEED = 5
         const ENEMY_SPEED = 2
         const HIT_COOLDOWN = 1000;
@@ -62,9 +63,18 @@
          * Funkcja tworząca przeciwnika
          */
         function spawnEnemy() {
-            const enemy_pos_x = Math.random() * 640
-            const enemy_pos_y = Math.random() * 480
+            let enemy_pos_x;
+            let enemy_pos_y;
+            let distance;
 
+            do {
+                enemy_pos_x = Math.random() * 640
+                enemy_pos_y = Math.random() * 480
+
+                const dx = enemy_pos_x - player_pos_x;
+                const dy = enemy_pos_y - player_pos_y;
+                distance = Math.sqrt(dx * dx + dy * dy);
+            } while (distance < HERO_SAFE_ZONE);
             enemies.push({x: enemy_pos_x, y: enemy_pos_y, speed: ENEMY_SPEED, hp: 1 })
         }
 
@@ -188,6 +198,9 @@
             }
         }
 
+        /**
+         * Funkcja rysująca interfejs użytkownika na tkaninie
+         */
         function drawUI() {
             ctx.save();
             ctx.fillStyle = 'rgb(255,0,0)';
