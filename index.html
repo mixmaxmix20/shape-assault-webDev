@@ -27,7 +27,11 @@
         let mouse_y = 0;
         const HERO_SPEED = 3
         let hero_hp = 100
+        let hero_max_hp = 100
         const HERO_SAFE_ZONE = 150;
+        let hero_xp = 0;
+        let hero_lvl = 1;
+        let xp_to_next_level = 1000;
         const PROJECTILE_SPEED = 5
         const ENEMY_SPEED = 2
         const HIT_COOLDOWN = 1000;
@@ -165,6 +169,14 @@
             }
         }
 
+        function handleLevelUp() {
+            if (hero_xp >= xp_to_next_level) {
+                hero_xp = 0;
+                hero_lvl++;
+                hero_max_hp += 5;
+            }
+        }
+
         /**
          * Funkcja sprawdzająca kolizję przeciwników i pocisków
          */
@@ -192,6 +204,7 @@
                         // TODO: Dodać HP przeciwników i jego obsługę
                         projectiles.splice(projectiles.indexOf(projectile), 1);
                         enemies.splice(enemies.indexOf(enemy), 1)
+                        hero_xp += 50;
                         break;
                     }
                 }
@@ -203,15 +216,39 @@
          */
         function drawUI() {
             ctx.save();
+
+            // HP
             ctx.fillStyle = 'rgb(255,0,0)';
             ctx.translate(0, 0);
-            ctx.fillRect(30, 5, 100, 10)
+            ctx.fillRect(40, 5, 100, 10)
             ctx.fillStyle = 'rgb(0,255,0)';
             ctx.translate(0, 0);
-            ctx.fillRect(30, 5, hero_hp, 10)
+            ctx.fillRect(40, 5, (hero_hp / hero_max_hp) * 100, 10)
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(40, 5, 100, 10);
             ctx.fillStyle = 'rgb(0,0,0)';
             ctx.font = '14px sans-serif';
-            ctx.fillText('HP', 15, 15);
+            ctx.fillText('HP', 20, 15);
+            ctx.fillText(hero_hp + ' / ' + hero_max_hp, 175, 15);
+
+            // XP
+            ctx.fillText('XP', 20, 30);
+            ctx.fillStyle = 'rgba(160,0,255,0)';
+            ctx.fillRect(40, 20, 100, 10)
+            ctx.translate(0, 0);
+            ctx.fillStyle = 'rgb(160,0,255)';
+            ctx.fillRect(40, 20, hero_xp / 10, 10)
+            ctx.translate(0, 0);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(40, 20, 100, 10);
+
+            // LVL
+            ctx.font = '12px sans-serif';
+            ctx.fillText('LVL ' + hero_lvl, 20, 45);
+
+
             ctx.restore();
         }
 
@@ -221,6 +258,7 @@
         function redraw() {
             ctx.clearRect(0, 0, 640, 480);
             handleMovement()
+            handleLevelUp()
             draw_hero();
             update_enemy()
             update_projectiles();
