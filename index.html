@@ -26,8 +26,11 @@
         let mouse_x = 0;
         let mouse_y = 0;
         const HERO_SPEED = 3
+        let hero_hp = 100
         const PROJECTILE_SPEED = 5
         const ENEMY_SPEED = 2
+        const HIT_COOLDOWN = 1000;
+        let last_time_hit = 0;
         const projectiles = [];
         const enemies = [];
 
@@ -156,7 +159,20 @@
          * Funkcja sprawdzająca kolizję przeciwników i pocisków
          */
         function checkCollisions() {
+            const now = performance.now();
+
             for (let enemy of enemies) {
+                if (now - last_time_hit > HIT_COOLDOWN) {
+                    const dx_player = player_pos_x - enemy.x;
+                    const dy_player = player_pos_y - enemy.y;
+                    const distance_player = Math.sqrt(dx_player * dx_player + dy_player * dy_player);
+
+                    if (distance_player < 15) {
+                        hero_hp -= 5;
+                        last_time_hit = now;
+                    }
+                }
+
                 for (let projectile of projectiles) {
                     const dx = enemy.x - projectile.x;
                     const dy = enemy.y - projectile.y;
@@ -172,6 +188,20 @@
             }
         }
 
+        function drawUI() {
+            ctx.save();
+            ctx.fillStyle = 'rgb(255,0,0)';
+            ctx.translate(0, 0);
+            ctx.fillRect(30, 5, 100, 10)
+            ctx.fillStyle = 'rgb(0,255,0)';
+            ctx.translate(0, 0);
+            ctx.fillRect(30, 5, hero_hp, 10)
+            ctx.fillStyle = 'rgb(0,0,0)';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('HP', 15, 15);
+            ctx.restore();
+        }
+
         /**
          * Funkcja wywoływana cyklicznie przerysowująca tkaninę
          */
@@ -182,6 +212,7 @@
             update_enemy()
             update_projectiles();
             checkCollisions();
+            drawUI();
             for (const p of projectiles) {
                 draw_projectile(p);
             }
