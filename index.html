@@ -22,6 +22,7 @@
         let ctx;
         let player_pos_x = 320, player_pos_y = 300;
         let welcome_screen = true;
+        let game_over = false;
         const keys = {}
         let mouse_x = 0;
         let mouse_y = 0;
@@ -34,6 +35,12 @@
         let xp_to_next_level = 1000;
         const PROJECTILE_SPEED = 5
         const ENEMY_SPEED = 2
+        const base_enemy_hp = 1;
+        let enemy_hp = base_enemy_hp;
+        const base_enemy_xp = 100;
+        let enemy_xp = base_enemy_xp;
+        const base_enemy_dmg = 5;
+        let enemy_dmg = base_enemy_dmg;
         const HIT_COOLDOWN = 1000;
         let last_time_hit = 0;
         const projectiles = [];
@@ -49,6 +56,16 @@
                 requestAnimationFrame(gameLoop);
                 setInterval(spawnEnemy, 2000)
             }
+        }
+
+        /**
+         * Funkcja obsługująca koniec rozgrywki
+         */
+        function handleGameOver() {
+            game_over = true;
+            ctx.font = '48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER', 320, 240);
         }
         /**
          * Funkcja rysująca bohatera na tkaninie
@@ -79,7 +96,7 @@
                 const dy = enemy_pos_y - player_pos_y;
                 distance = Math.sqrt(dx * dx + dy * dy);
             } while (distance < HERO_SAFE_ZONE);
-            enemies.push({x: enemy_pos_x, y: enemy_pos_y, speed: ENEMY_SPEED, hp: 1 })
+            enemies.push({x: enemy_pos_x, y: enemy_pos_y, speed: ENEMY_SPEED, hp: enemy_hp })
         }
 
         /**
@@ -169,11 +186,17 @@
             }
         }
 
+        /**
+         * Funkcja obsługująca zdobywanie poziomu przez gracza
+         */
         function handleLevelUp() {
             if (hero_xp >= xp_to_next_level) {
-                hero_xp = 0;
                 hero_lvl++;
                 hero_max_hp += 5;
+                enemy_hp = Math.ceil(base_enemy_hp + hero_lvl * 0.75);
+                enemy_xp = enemy_hp * base_enemy_xp * 0.4;
+                enemy_dmg = Math.ceil(base_enemy_dmg * enemy_hp * 0.75);
+                xp_to_next_level = Math.floor(xp_to_next_level * 2.1);
             }
         }
 
@@ -190,7 +213,7 @@
                     const distance_player = Math.sqrt(dx_player * dx_player + dy_player * dy_player);
 
                     if (distance_player < 15) {
-                        hero_hp -= 5;
+                        hero_hp -= enemy_dmg;
                         last_time_hit = now;
                     }
                 }
@@ -201,11 +224,13 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < 30) {
-                        // TODO: Dodać HP przeciwników i jego obsługę
                         projectiles.splice(projectiles.indexOf(projectile), 1);
-                        enemies.splice(enemies.indexOf(enemy), 1)
-                        hero_xp += 50;
-                        break;
+                        enemy.hp -= 1;
+                        if (enemy.hp <= 0) {
+                            enemies.splice(enemies.indexOf(enemy), 1)
+                            hero_xp += enemy_xp;
+                            break;
+                        }
                     }
                 }
             }
@@ -238,7 +263,7 @@
             ctx.fillRect(40, 20, 100, 10)
             ctx.translate(0, 0);
             ctx.fillStyle = 'rgb(160,0,255)';
-            ctx.fillRect(40, 20, hero_xp / 10, 10)
+            ctx.fillRect(40, 20, (hero_xp / xp_to_next_level) * 100, 10)
             ctx.translate(0, 0);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 1;
@@ -259,16 +284,19 @@
             ctx.clearRect(0, 0, 640, 480);
             handleMovement()
             handleLevelUp()
+            drawUI();
             draw_hero();
             update_enemy()
             update_projectiles();
             checkCollisions();
-            drawUI();
             for (const p of projectiles) {
                 draw_projectile(p);
             }
             for (const e of enemies) {
                 draw_enemy(e)
+            }
+            if (hero_hp <= 0) {
+                handleGameOver();
             }
         }
         /**
@@ -328,6 +356,7 @@
          * Główna pętla gry
          */
         function gameLoop() {
+            if (game_over) return;
             redraw()
             requestAnimationFrame(gameLoop);
         }
