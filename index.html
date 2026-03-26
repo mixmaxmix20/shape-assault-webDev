@@ -45,6 +45,7 @@
         let last_time_hit = 0;
         const projectiles = [];
         const enemies = [];
+        const pickups = [];
 
         let killed_enemies = 0;
 
@@ -93,8 +94,26 @@
             ctx.restore();
         }
 
+        function spawnPickup(e_pos_x, e_pos_y) {
+            const randomNum = Math.random();
+            if (randomNum < 0.05) {
+                pickups.push({x: e_pos_x, y: e_pos_y, type: 'hp'});
+            }
+        }
+
+        function drawPickup(pickup) {
+            ctx.save();
+            ctx.fillStyle = 'rgb(238,0,255)';
+            ctx.fillRect(pickup.x - 5, pickup.y, 15, 5);
+            ctx.fillRect(pickup.x, pickup.y - 5, 5, 15);
+            ctx.restore();
+        }
+
+        /**
+         * Funkcja tworząca wielu przeciwników
+         */
         function spawnWave() {
-            const size = 1 + Math.floor(Math.random() * 4);
+            const size = 2 + Math.floor(Math.random() * 4);
             for (let i = 0; i < size; i++) {
                 spawnEnemy();
             }
@@ -226,6 +245,19 @@
         function checkCollisions() {
             const now = performance.now();
 
+            for (let pickup of pickups) {
+                const dx_player = player_pos_x - pickup.x;
+                const dy_player = player_pos_y - pickup.y;
+                const distance_player = Math.sqrt(dx_player * dx_player + dy_player * dy_player);
+
+                if(hero_hp < hero_max_hp) {
+                    if (distance_player <= 15) {
+                        pickups.splice(pickups.indexOf(pickup), 1);
+                        hero_hp += Math.min(Math.floor(0.25 * hero_max_hp), hero_max_hp - hero_hp);
+                    }
+                }
+            }
+
             for (let enemy of enemies) {
                 if (now - last_time_hit > HIT_COOLDOWN) {
                     const dx_player = player_pos_x - enemy.x;
@@ -250,6 +282,7 @@
                             enemies.splice(enemies.indexOf(enemy), 1)
                             hero_xp += enemy_xp;
                             killed_enemies++;
+                            spawnPickup(enemy.x, enemy.y);
                             break;
                         }
                     }
@@ -316,6 +349,9 @@
             for (const e of enemies) {
                 draw_enemy(e)
             }
+            for (const pickup of pickups) {
+                drawPickup(pickup);
+            }
             if (hero_hp <= 0) {
                 handleGameOver();
             }
@@ -377,6 +413,9 @@
             })
         }
 
+        /**
+         * Funkcja resetująca stan gry
+         */
         function restartGame() {
 
             player_pos_x = 320
@@ -397,6 +436,7 @@
 
             enemies.length = 0;
             projectiles.length = 0;
+            pickups.length = 0;
             game_over = false;
             requestAnimationFrame(gameLoop);
             spawnInterval = setInterval(spawnWave, 2000)
