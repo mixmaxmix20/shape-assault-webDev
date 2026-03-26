@@ -46,6 +46,10 @@
         const projectiles = [];
         const enemies = [];
 
+        let killed_enemies = 0;
+
+        let spawnInterval = null;
+
         /**
          * Funkcja czyszcząca ekran powitalny
          */
@@ -54,7 +58,7 @@
                 ctx.clearRect(0, 0, 640, 480);
                 welcome_screen = false;
                 requestAnimationFrame(gameLoop);
-                setInterval(spawnEnemy, 2000)
+                spawnInterval = setInterval(spawnEnemy, 2000)
             }
         }
 
@@ -63,9 +67,18 @@
          */
         function handleGameOver() {
             game_over = true;
+            clearInterval(spawnInterval);
+
+            ctx.clearRect(0, 0, 640, 480);
+
             ctx.font = '48px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('GAME OVER', 320, 240);
+
+            ctx.font = '24px sans-serif';
+            ctx.fillText('Poziom: ' + hero_lvl, 320, 280);
+            ctx.fillText('Pokonani przeciwnicy: ' + killed_enemies, 320, 320);
+            ctx.fillText('Naciśnij R aby zagrać ponownie', 320, 360);
         }
         /**
          * Funkcja rysująca bohatera na tkaninie
@@ -229,6 +242,7 @@
                         if (enemy.hp <= 0) {
                             enemies.splice(enemies.indexOf(enemy), 1)
                             hero_xp += enemy_xp;
+                            killed_enemies++;
                             break;
                         }
                     }
@@ -320,6 +334,10 @@
         function keyDownListener(e) {
             keys[e.keyCode] = true;
             clear_welcome();
+
+            if (game_over && e.keyCode === 82) {
+                restartGame();
+            }
         }
 
         /**
@@ -350,6 +368,31 @@
                 angle: angle,
                 speed: PROJECTILE_SPEED
             })
+        }
+
+        function restartGame() {
+
+            player_pos_x = 320
+            player_pos_y = 300;
+            mouse_x = 0;
+            mouse_y = 0;
+            hero_hp = 100
+            hero_max_hp = 100
+            hero_xp = 0;
+            hero_lvl = 1;
+            xp_to_next_level = 1000;
+            enemy_hp = base_enemy_hp;
+            enemy_xp = base_enemy_xp;
+            enemy_dmg = base_enemy_dmg;
+            last_time_hit = 0;
+
+            killed_enemies = 0;
+
+            enemies.length = 0;
+            projectiles.length = 0;
+            game_over = false;
+            requestAnimationFrame(gameLoop);
+            spawnInterval = setInterval(spawnEnemy, 2000)
         }
 
         /**
