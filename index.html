@@ -23,6 +23,7 @@
 
         let welcome_screen = true;
         let game_over = false;
+        let pause = false;
         let levelUpScreen = false;
         let levelUpOptions = [];
         let LevelUpScreenOpenTime = 0;
@@ -286,7 +287,7 @@
          * Funkcja do obsługi poruszania się postaci
          */
         function handleMovement() {
-            if (levelUpScreen) return;
+            if (levelUpScreen || pause) return;
             const left = keys[37] || keys[65]
             const up = keys[38] || keys[87]
             const right = keys[39] || keys[68]
@@ -471,6 +472,15 @@
             if (game_over && e.keyCode === 82) {
                 restartGame();
             }
+
+            if(!pause && (!game_over || !levelUpScreen) && e.keyCode === 27) {
+                pause = true;
+                clearInterval(spawnInterval);
+            } else if (pause && e.keyCode === 27) {
+                pause = false;
+                requestAnimationFrame(gameLoop);
+                spawnInterval = setInterval(spawnWave, 2000)
+            }
         }
 
         /**
@@ -494,6 +504,7 @@
          */
         function mouseClickListener(e) {
             clear_welcome()
+            if (pause) return;
 
             if (levelUpScreen) {
                 const rect = canvas.getBoundingClientRect();
@@ -502,6 +513,7 @@
                 handleLevelUpClick(clickX, clickY);
                 return;
             }
+
 
             const angle = Math.atan2(mouse_y - player_pos_y, mouse_x - player_pos_x);
             projectiles.push({
@@ -541,12 +553,27 @@
             spawnInterval = setInterval(spawnWave, 2000)
         }
 
+        function drawPauseScreen() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, 640, 480);
+            ctx.fillStyle = 'white';
+            ctx.font = '48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('PAUZA', 320, 240);
+            ctx.font = '20px sans-serif';
+            ctx.fillText('Naciśnij ESC aby kontynuować', 320, 300);
+        }
+
         /**
          * Główna pętla gry
          */
         function gameLoop() {
             if (game_over) return;
             if (levelUpScreen) return;
+            if (pause) {
+                drawPauseScreen()
+                return;
+            }
             redraw()
             requestAnimationFrame(gameLoop);
         }
