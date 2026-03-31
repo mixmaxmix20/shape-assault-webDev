@@ -26,14 +26,14 @@
         let pause = false;
         let levelUpScreen = false;
         let levelUpOptions = [];
-        let LevelUpScreenOpenTime = 0;
-        const LevelUpScreenDelay = 750;
+        let levelUpScreenOpenTime = 0;
+        const levelUpScreenDelay = 750;
 
         let player_pos_x = 320, player_pos_y = 300;
         const keys = {}
         let mouse_x = 0;
         let mouse_y = 0;
-        let HERO_SPEED = 3
+        let HERO_SPEED = 1
         let hero_hp = 100
         let hero_max_hp = 100
         const HERO_SAFE_ZONE = 150;
@@ -42,7 +42,8 @@
         let hero_dmg = 1;
         let xp_to_next_level = 1000;
         const PROJECTILE_SPEED = 5
-        const ENEMY_SPEED = 2
+        const ENEMY_SPEED = 1
+        const enemySpawnCooldown = 1500;
         const base_enemy_hp = 1;
         let enemy_hp = base_enemy_hp;
         const base_enemy_xp = 100;
@@ -67,7 +68,7 @@
                 ctx.clearRect(0, 0, 640, 480);
                 welcome_screen = false;
                 requestAnimationFrame(gameLoop);
-                spawnInterval = setInterval(spawnWave, 2000)
+                spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
             }
         }
 
@@ -102,7 +103,7 @@
 
             ctx.beginPath();
             ctx.arc(3, 0, 8, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(35,35,37)';
+            ctx.fillStyle = 'rgb(78 78 179)';
             ctx.fill();
 
             ctx.fillRect(5, 15, 8, 1);
@@ -114,7 +115,7 @@
          */
         function spawnPickup(e_pos_x, e_pos_y) {
             const randomNum = Math.random();
-            if (randomNum < 0.05) {
+            if (randomNum < 0.03) {
                 pickups.push({x: e_pos_x, y: e_pos_y, type: 'hp'});
             }
         }
@@ -123,10 +124,32 @@
          * Funkcja rysująca przedmioty na ekranie
          */
         function drawPickup(pickup) {
+
             ctx.save();
+            ctx.translate(pickup.x, pickup.y);
             ctx.fillStyle = 'rgb(255,0,0)';
-            ctx.fillRect(pickup.x - 5, pickup.y, 15, 5);
-            ctx.fillRect(pickup.x, pickup.y - 5, 5, 15);
+            ctx.fillRect(-8, -3, 16, 6);
+            ctx.fillRect(-3, -8, 6, 16);
+
+            ctx.beginPath();
+            ctx.moveTo(-8, -3);
+            ctx.lineTo(-3, -3);
+            ctx.lineTo(-3, -8);
+            ctx.lineTo( 3, -8);
+            ctx.lineTo( 3, -3);
+            ctx.lineTo( 8, -3);
+            ctx.lineTo( 8,  3);
+            ctx.lineTo( 3,  3);
+            ctx.lineTo( 3,  8);
+            ctx.lineTo(-3,  8);
+            ctx.lineTo(-3,  3);
+            ctx.lineTo(-8,  3);
+            ctx.closePath();
+
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
             ctx.restore();
         }
 
@@ -173,15 +196,91 @@
                 ctx.textAlign = 'center';
                 ctx.fillText(option.label, x + w / 2, y + 20);
                 if (option.id === 'hp') {
+
+                    const cx = x + w / 2;
+                    const cy = y + h / 2;
+
                     ctx.fillStyle = 'rgb(255,0,0)';
-                    ctx.fillRect(x + w / 2 - 10 - 5, y + h / 2, 30, 10);
-                    ctx.fillRect(x + w / 2 - 5, y + h / 2 - 10, 10, 30);
+                    ctx.fillRect(cx - 15, cy, 30, 10);
+                    ctx.fillRect(cx - 5, cy - 10, 10, 30);
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 15, cy);
+                    ctx.lineTo(cx - 5,  cy);
+                    ctx.lineTo(cx - 5,  cy - 10);
+                    ctx.lineTo(cx + 5,  cy - 10);
+                    ctx.lineTo(cx + 5,  cy);
+                    ctx.lineTo(cx + 15, cy);
+                    ctx.lineTo(cx + 15, cy + 10);
+                    ctx.lineTo(cx + 5,  cy + 10);
+                    ctx.lineTo(cx + 5,  cy + 20);
+                    ctx.lineTo(cx - 5,  cy + 20);
+                    ctx.lineTo(cx - 5,  cy + 10);
+                    ctx.lineTo(cx - 15, cy + 10);
+                    ctx.closePath();
+
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else if (option.id === 'dmg') {
+
+                    const cx = x + w / 2;
+                    const cy = y + h / 2;
+
+                    ctx.fillStyle = 'rgb(180, 180, 180)';
+                    ctx.fillRect(cx - 5, cy - 5, 10, 20);
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 5, cy - 5);
+                    ctx.lineTo(cx,     cy - 20);
+                    ctx.lineTo(cx + 5, cy - 5);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = 'rgb(200, 150, 0)';
+                    ctx.fillRect(cx - 6, cy - 5, 12, 20);
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 5, cy - 5);
+                    ctx.lineTo(cx,     cy - 20);
+                    ctx.lineTo(cx + 5, cy - 5);
+                    ctx.lineTo(cx + 6, cy + 5);
+                    ctx.lineTo(cx + 6, cy + 15);
+                    ctx.lineTo(cx - 6, cy + 15);
+                    ctx.lineTo(cx - 6, cy + 5);
+                    ctx.closePath();
+
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                } else if (option.id === 'speed') {
+
+                    const cx = x + w / 2;
+                    const cy = y + h / 2;
+
+                    ctx.fillStyle = 'rgb(255, 200, 0)';
+
+                    ctx.beginPath();
+                    ctx.moveTo(cx,  cy - 20);
+                    ctx.lineTo(cx + 15, cy - 20);
+                    ctx.lineTo(cx,      cy - 5);
+                    ctx.lineTo(cx + 15, cy - 5);
+                    ctx.lineTo(cx - 10, cy + 20);
+                    ctx.lineTo(cx - 5,  cy);
+                    ctx.lineTo(cx - 15, cy);
+                    ctx.closePath();
+
+                    ctx.fill();
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
                 }
             })
         }
 
         function handleLevelUpClick(clickX, clickY) {
-            if (performance.now() - levelUpScreenOpenTime < LevelUpScreenDelay) return;
+            if (performance.now() - levelUpScreenOpenTime < levelUpScreenDelay) return;
 
             levelUpOptions.forEach((option, i) => {
                 const x = 100 + i * 170;
@@ -318,11 +417,11 @@
         /**
          * Funkcja obsługująca zdobywanie poziomu przez gracza
          */
-        function handleLevelUp(option) {
+        function handleLevelUp() {
             if (hero_xp >= xp_to_next_level) {
                 hero_lvl++;
                 showLevelUpScreen();
-                enemy_hp = Math.ceil(base_enemy_hp + hero_lvl * 0.75);
+                enemy_hp = Math.ceil(base_enemy_hp * hero_lvl * 0.75);
                 enemy_xp = enemy_hp * base_enemy_xp * 0.4;
                 enemy_dmg = Math.ceil(base_enemy_dmg * enemy_hp * 0.75);
                 xp_to_next_level = Math.floor(xp_to_next_level * 2.1);
@@ -428,20 +527,25 @@
             ctx.clearRect(0, 0, 640, 480);
             handleMovement()
             handleLevelUp()
-            drawUI();
-            draw_hero();
-            update_enemy()
-            update_projectiles();
-            checkCollisions();
-            for (const p of projectiles) {
-                draw_projectile(p);
-            }
-            for (const e of enemies) {
-                draw_enemy(e)
-            }
+
             for (const pickup of pickups) {
                 drawPickup(pickup);
             }
+            draw_hero();
+
+            for (const e of enemies) {
+                draw_enemy(e)
+            }
+            update_enemy()
+
+            for (const p of projectiles) {
+                draw_projectile(p);
+            }
+            update_projectiles();
+
+            drawUI();
+            checkCollisions();
+
             if (hero_hp <= 0) {
                 handleGameOver();
             }
@@ -479,7 +583,7 @@
             } else if (pause && e.keyCode === 27) {
                 pause = false;
                 requestAnimationFrame(gameLoop);
-                spawnInterval = setInterval(spawnWave, 2000)
+                spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
             }
         }
 
@@ -550,7 +654,7 @@
             pickups.length = 0;
             game_over = false;
             requestAnimationFrame(gameLoop);
-            spawnInterval = setInterval(spawnWave, 2000)
+            spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
         }
 
         function drawPauseScreen() {
