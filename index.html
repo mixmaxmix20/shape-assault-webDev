@@ -732,7 +732,6 @@
          * Funkcja resetująca stan gry
          */
         function restartGame() {
-
             playerPosX = 320;
             playerPosY = 300;
             mouseX = 0;
@@ -746,7 +745,10 @@
             heroSpeed = 1;
             heroDmg = 1;
 
-            killedEnemies = 0;
+            killedBasicEnemies = 0;
+            killedFastEnemies = 0;
+            killedTankEnemies = 0;
+            killedBossEnemies = 0;
 
             enemies.length = 0;
             projectiles.length = 0;
