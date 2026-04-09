@@ -63,7 +63,7 @@
 
         const FAST_START  = 2;
         const TANK_START  = 6;
-        const BOSS_START  = 11;
+        const BOSS_START  = 2;
 
         const BASIC_DECAY = 2;
         const FAST_GROW   = 3;
@@ -73,8 +73,8 @@
         const enemyTypes = {
             basic:   { color: 'rgb(255, 0, 0)',   speed: 1.0, hp: 1, xp: 10, dmg: 10, hitRadius: 20 },
             fast:    { color: 'rgb(255, 165, 0)', speed: 2.0, hp: 10, xp: 35, dmg: 20, hitRadius: 25 },
-            tank:    { color: 'rgb(128, 0, 128)', speed: 0.5, hp: 50, xp: 100, dmg: 30, hitRadius: 30 },
-            boss:    { color: 'rgb(0, 0, 0)',     speed: 0.8, hp: 250, xp: 500, dmg: 75, hitRadius: 40 },
+            tank:    { color: 'rgb(128, 0, 128)', speed: 0.7, hp: 50, xp: 100, dmg: 30, hitRadius: 30 },
+            boss:    { color: 'rgb(0, 0, 0)',     speed: 0.35, hp: 250, xp: 500, dmg: 75, hitRadius: 40 },
         };
 
         /**
@@ -408,8 +408,20 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(-15, -15, 30, 30);
             } else if (enemy.type === 'boss') {
+                const r = 60;
+                const sides = 6;
                 ctx.beginPath();
-                ctx.arc(0, 0, 40, 0, Math.PI * 2);
+                for (let i = 0; i < sides; i++) {
+                    const fAngle = (i / sides) * Math.PI * 2;
+                    const px = Math.cos(fAngle) * r;
+                    const py = Math.sin(fAngle) * r;
+                    if (i === 0) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.closePath();
                 ctx.fill();
             }
 
