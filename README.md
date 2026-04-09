@@ -1,10 +1,10 @@
-# 🚀 ShapeAssault
+# 🔺🟦🟡 ShapeAssault
 
 ---
 
 ## 🕹️ O projekcie
 
-**ShapeAssault** to dynamiczna strzelanka 2D stworzona jako projekt zaliczeniowy na zajęcia z **Web Developmentu**. 
+**ShapeAssault** to dynamiczna strzelanka 2D stworzona jako projekt na zajęcia z **Web Developmentu**. 
 
 Głównym zamysłem i wyzwaniem technicznym projektu było wykorzystanie możliwości elementu **Canvas** do renderowania grafiki w czasie rzeczywistym.
 ### Główne cechy:
