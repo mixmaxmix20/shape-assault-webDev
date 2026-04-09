@@ -21,54 +21,71 @@
         let canvas;
         let ctx;
 
-        let welcome_screen = true;
-        let game_over = false;
+        let welcomeScreen = true;
+        let gameOver = false;
         let pause = false;
         let levelUpScreen = false;
-        let levelUpOptions = [];
-        let levelUpScreenOpenTime = 0;
-        const levelUpScreenDelay = 750;
 
-        let player_pos_x = 320, player_pos_y = 300;
-        const keys = {}
-        let mouse_x = 0;
-        let mouse_y = 0;
-        let HERO_SPEED = 1
-        let hero_hp = 100
-        let hero_max_hp = 100
+        let playerPosX = 320, playerPosY = 300;
+        const keys = {};
+        let mouseX = 0;
+        let mouseY = 0;
+
+        let levelUpScreenOpenTime = 0;
+        const LEVEL_UP_SCREEN_DELAY = 750;
+
+        let heroSpeed = 1;
+        let heroHp = 50;
+        let heroMaxHp = 50;
+        let heroXp = 0;
+        let heroLvl = 1;
+        let heroDmg = 1;
+        let xpToNextLvl = 100;
+
+        const PROJECTILE_SPEED = 5;
         const HERO_SAFE_ZONE = 150;
-        let hero_xp = 0;
-        let hero_lvl = 1;
-        let hero_dmg = 1;
-        let xp_to_next_level = 1000;
-        const PROJECTILE_SPEED = 5
-        const ENEMY_SPEED = 1
-        const enemySpawnCooldown = 1500;
-        const base_enemy_hp = 1;
-        let enemy_hp = base_enemy_hp;
-        const base_enemy_xp = 100;
-        let enemy_xp = base_enemy_xp;
-        const base_enemy_dmg = 5;
-        let enemy_dmg = base_enemy_dmg;
-        const HIT_COOLDOWN = 1000;
-        let last_time_hit = 0;
+        const HIT_COOLDOWN = 500;
+        let lastTimeHit = 0;
+
         const projectiles = [];
         const enemies = [];
         const pickups = [];
+        let levelUpOptions = [];
 
-        let killed_enemies = 0;
+        let killedBasicEnemies = 0;
+        let killedFastEnemies = 0;
+        let killedTankEnemies = 0;
+        let killedBossEnemies = 0;
 
+        // Spawn przeciwników
+        const ENEMY_SPAWN_COOLDOWN = 1500;
         let spawnInterval = null;
+
+        const FAST_START  = 2;
+        const TANK_START  = 6;
+        const BOSS_START  = 11;
+
+        const BASIC_DECAY = 2;
+        const FAST_GROW   = 3;
+        const TANK_GROW   = 1;
+        const BOSS_GROW   = 0.5;
+
+        const enemyTypes = {
+            basic:   { color: 'rgb(255, 0, 0)',   speed: 1.0, hp: 1, xp: 10, dmg: 10, hitRadius: 20 },
+            fast:    { color: 'rgb(255, 165, 0)', speed: 2.0, hp: 10, xp: 35, dmg: 20, hitRadius: 25 },
+            tank:    { color: 'rgb(128, 0, 128)', speed: 0.5, hp: 50, xp: 100, dmg: 30, hitRadius: 30 },
+            boss:    { color: 'rgb(0, 0, 0)',     speed: 0.8, hp: 250, xp: 500, dmg: 75, hitRadius: 40 },
+        };
 
         /**
          * Funkcja czyszcząca ekran powitalny
          */
-        function clear_welcome() {
-            if (welcome_screen) {
+        function clearWelcome() {
+            if (welcomeScreen) {
                 ctx.clearRect(0, 0, 640, 480);
-                welcome_screen = false;
+                welcomeScreen = false;
                 requestAnimationFrame(gameLoop);
-                spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
+                spawnInterval = setInterval(spawnWave, ENEMY_SPAWN_COOLDOWN);
             }
         }
 
@@ -76,36 +93,48 @@
          * Funkcja obsługująca koniec rozgrywki
          */
         function handleGameOver() {
-            game_over = true;
+            gameOver = true;
             clearInterval(spawnInterval);
 
             ctx.clearRect(0, 0, 640, 480);
 
             ctx.font = '48px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', 320, 240);
+            ctx.fillStyle = 'rgb(0, 0, 0)';
+            ctx.fillText('GAME OVER', 320, 200);
 
             ctx.font = '24px sans-serif';
-            ctx.fillText('Poziom: ' + hero_lvl, 320, 280);
-            ctx.fillText('Pokonani przeciwnicy: ' + killed_enemies, 320, 320);
-            ctx.fillText('Naciśnij R aby zagrać ponownie', 320, 360);
+            ctx.fillText('Poziom: ' + heroLvl, 320, 240);
+            ctx.fillText('Pokonani zwykli przeciwnicy: ' + killedBasicEnemies, 320, 280);
+            ctx.fillText('Pokonani szybcy przeciwnicy: ' + killedFastEnemies, 320, 320);
+            ctx.fillText('Pokonani twardzi przeciwnicy: ' + killedTankEnemies, 320, 360);
+            ctx.fillText('Pokonani Bossowie: ' + killedBossEnemies, 320, 400);
+            ctx.fillText('Naciśnij R aby zagrać ponownie', 320, 440);
         }
         /**
          * Funkcja rysująca bohatera na tkaninie
          */
-        function draw_hero() {
-            const angle = Math.atan2(mouse_y - player_pos_y, mouse_x - player_pos_x);
+        function drawHero() {
+            const angle = Math.atan2(mouseY - playerPosY, mouseX - playerPosX);
             ctx.save();
-            ctx.fillStyle = 'rgb(43,255,0)';
-            ctx.translate(player_pos_x, player_pos_y);
+            ctx.fillStyle = 'rgb(18 104 1)';
+            ctx.translate(playerPosX, playerPosY);
             ctx.rotate(angle);
             ctx.fillRect(-5, -15, 10, 30);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-5, -15, 10, 30);
+
 
             ctx.beginPath();
             ctx.arc(3, 0, 8, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgb(78 78 179)';
+            ctx.fillStyle = 'rgb(246 201 201)';
             ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1;
+            ctx.stroke();
 
+            ctx.fillStyle = 'rgb(0 0 0)';
             ctx.fillRect(5, 15, 8, 1);
             ctx.restore();
         }
@@ -113,10 +142,10 @@
         /**
          * Funkcja tworząca przedmioty do podniesienia
          */
-        function spawnPickup(e_pos_x, e_pos_y) {
+        function spawnPickup(ePosX, ePosY) {
             const randomNum = Math.random();
-            if (randomNum < 0.03) {
-                pickups.push({x: e_pos_x, y: e_pos_y, type: 'hp'});
+            if (randomNum < 0.01) {
+                pickups.push({x: ePosX, y: ePosY, type: 'hp'});
             }
         }
 
@@ -157,32 +186,30 @@
             levelUpScreen = true;
             levelUpScreenOpenTime = performance.now();
             levelUpOptions = [
-                { id: 'hp', label: 'HP +20', action: () => { hero_max_hp += 20; hero_hp = hero_max_hp; }},
-                { id: 'dmg', label: 'Obrażenia +1', action: () => {hero_dmg++; } },
-                { id: 'speed', label: 'Szybkość +1', action: () => { HERO_SPEED++; } },
-            ]
+                { id: 'hp', label: 'HP +25%', action: () => { heroMaxHp = Math.floor(heroMaxHp * 1.25); heroHp = heroMaxHp; }},
+                { id: 'dmg', label: 'Obrażenia +1', action: () => {heroDmg++; } },
+                { id: 'speed', label: 'Szybkość +25%', action: () => { heroSpeed += 0.25; } },
+            ];
         }
 
         function drawLevelUpScreen() {
             if (!levelUpScreen) return;
             ctx.save();
-            ctx.fillStyle = 'navajowhite';
+            ctx.fillStyle = 'rgb(150 255 159)';
             ctx.fillRect(80, 80, 480, 320);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 1;
             ctx.strokeRect(80, 80, 480, 320);
-
 
             ctx.fillStyle = 'black';
             ctx.font = '24px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('Wybierz ulepszenie:', 320, 120);
 
-
             levelUpOptions.forEach((option, i) => {
-                const x = 100 + i * 170;
+                const x = 100 + i * 160;
                 const y = 180;
-                const w = 100;
+                const w = 120;
                 const h = 160;
 
                 ctx.fillStyle = 'rgb(203,203,203)';
@@ -255,7 +282,6 @@
                     ctx.stroke();
 
                 } else if (option.id === 'speed') {
-
                     const cx = x + w / 2;
                     const cy = y + h / 2;
 
@@ -280,12 +306,12 @@
         }
 
         function handleLevelUpClick(clickX, clickY) {
-            if (performance.now() - levelUpScreenOpenTime < levelUpScreenDelay) return;
+            if (performance.now() - levelUpScreenOpenTime < LEVEL_UP_SCREEN_DELAY) return;
 
             levelUpOptions.forEach((option, i) => {
-                const x = 100 + i * 170;
+                const x = 100 + i * 160;
                 const y = 180;
-                const w = 100;
+                const w = 120;
                 const h = 160;
 
                 if (clickX >= x && clickX <= x + w && clickY >= y && clickY <= y + h) {
@@ -294,6 +320,30 @@
                     requestAnimationFrame(gameLoop);
                 }
             })
+        }
+
+        function getSpawnWeights() {
+            const lvl = heroLvl;
+            return [
+                Math.max(0, 100 - lvl * BASIC_DECAY),
+                Math.max(0, (lvl - FAST_START  + 1) * FAST_GROW),
+                Math.max(0, (lvl - TANK_START  + 1) * TANK_GROW),
+                Math.max(0, (lvl - BOSS_START  + 1) * BOSS_GROW),
+            ];
+        }
+
+        function getEnemyType() {
+            const weights = getSpawnWeights();
+            const types = Object.keys(enemyTypes);
+
+            const total = weights.reduce((sum, weight) => sum + weight, 0);
+
+            let randomNum = Math.random() * total;
+
+            for (let i = 0; i < types.length; i++) {
+                randomNum -= weights[i];
+                if (randomNum <= 0) return types[i];
+            }
         }
 
         /**
@@ -311,70 +361,96 @@
          * Funkcja tworząca przeciwnika
          */
         function spawnEnemy() {
-            let enemy_pos_x;
-            let enemy_pos_y;
+            let enemyPosX;
+            let enemyPosY;
             let distance;
 
             do {
-                enemy_pos_x = Math.random() * 640
-                enemy_pos_y = Math.random() * 480
+                enemyPosX = Math.random() * 640;
+                enemyPosY = Math.random() * 480;
 
-                const dx = enemy_pos_x - player_pos_x;
-                const dy = enemy_pos_y - player_pos_y;
+                const dx = enemyPosX - playerPosX;
+                const dy = enemyPosY - playerPosY;
                 distance = Math.sqrt(dx * dx + dy * dy);
             } while (distance < HERO_SAFE_ZONE);
-            enemies.push({x: enemy_pos_x, y: enemy_pos_y, speed: ENEMY_SPEED, hp: enemy_hp })
+
+            const type = getEnemyType();
+            const enemy = enemyTypes[type];
+
+            enemies.push({x: enemyPosX, y: enemyPosY, type: type, color: enemy.color, speed: enemy.speed, hp: enemy.hp, xp: enemy.xp, dmg: enemy.dmg, hitRadius: enemy.hitRadius});
         }
 
         /**
          * Funkcja rysująca przeciwnika na tkaninie
          */
-        function draw_enemy(enemy) {
-                const dx = player_pos_x - enemy.x
-                const dy = player_pos_y - enemy.y
-                const angle = Math.atan2(dx, dy);
+        function drawEnemy(enemy) {
+            const dx = playerPosX - enemy.x;
+            const dy = playerPosY - enemy.y;
+            const angle = Math.atan2(dy, dx);
 
-                ctx.save();
-                ctx.fillStyle = 'rgb(255,0,0)';
-                ctx.translate(enemy.x, enemy.y);
-                ctx.rotate(angle);
-                ctx.fillRect(-5, -15, 30, 30);
-                ctx.restore();
+            ctx.save();
+            ctx.fillStyle = enemy.color;
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(angle);
+
+            if(enemy.type === 'basic') {
+                ctx.fillRect(-10, -10, 20, 20);
+            } else if (enemy.type === 'fast') {
+                ctx.beginPath();
+                ctx.moveTo(15, 0);
+                ctx.lineTo(-10, -8);
+                ctx.lineTo(-10, 8);
+                ctx.closePath();
+                ctx.fill();
+            } else if (enemy.type === 'tank') {
+                ctx.fillRect(-15, -15, 30, 30);
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-15, -15, 30, 30);
+            } else if (enemy.type === 'boss') {
+                ctx.beginPath();
+                ctx.arc(0, 0, 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
         }
 
         /**
          * Funkcja aktualizująca pozycje przeciwnika
          */
-        function update_enemy() {
+        function updateEnemy() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
-                const dx = player_pos_x - enemy.x
-                const dy = player_pos_y - enemy.y
+                const dx = playerPosX - enemy.x;
+                const dy = playerPosY - enemy.y;
                 const angle = Math.atan2(dx, dy);
-                enemy.x += Math.sin(angle) * enemy.speed
-                enemy.y += Math.cos(angle) * enemy.speed
+                enemy.x += Math.sin(angle) * enemy.speed;
+                enemy.y += Math.cos(angle) * enemy.speed;
             }
         }
 
         /**
          * Funkcja rysująca pociski na tkaninie
          */
-        function draw_projectile(p) {
+        function drawProjectile(p) {
             ctx.save();
-            ctx.fillStyle = 'rgb(0,81,255)';
+            ctx.fillStyle = 'rgb(0 0 0)';
             ctx.translate(p.x, p.y);
-            ctx.fillRect(-5, -15, 5, 5)
+            ctx.beginPath();
+            ctx.arc(0, 0, 2, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
 
         /**
          * Funkcja aktualizująca pozycje pocisków na tkaninie
          */
-        function update_projectiles() {
+        function updateProjectiles() {
             for (let i = projectiles.length - 1; i >= 0; i--) {
-                const p = projectiles[i]
-                p.x += Math.cos(p.angle) * p.speed
-                p.y += Math.sin(p.angle) * p.speed
+                const p = projectiles[i];
+                p.x += Math.cos(p.angle) * p.speed;
+                p.y += Math.sin(p.angle) * p.speed;
 
                 if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
                     projectiles.splice(i, 1);
@@ -387,44 +463,45 @@
          */
         function handleMovement() {
             if (levelUpScreen || pause) return;
-            const left = keys[37] || keys[65]
-            const up = keys[38] || keys[87]
-            const right = keys[39] || keys[68]
-            const down = keys[40] || keys[83]
-            let speed
+            const left = keys[37] || keys[65];
+            const up = keys[38] || keys[87];
+            const right = keys[39] || keys[68];
+            const down = keys[40] || keys[83];
+            let speed;
 
-            const diagonal = (left || right) && (up || down)
+            const diagonal = (left || right) && (up || down);
             if (diagonal) {
-                speed = HERO_SPEED / Math.sqrt(2)
+                speed = heroSpeed / Math.sqrt(2);
             } else {
-                speed = HERO_SPEED
+                speed = heroSpeed;
             }
 
             if (left) {
-                player_pos_x -= speed
+                playerPosX -= speed;
             }
             if (right) {
-                player_pos_x += speed
+                playerPosX += speed;
             }
             if (up) {
-                player_pos_y -= speed
+                playerPosY -= speed;
             }
             if (down) {
-                player_pos_y += speed
+                playerPosY += speed;
             }
+
+            // blokada wyjścia poza plansze
+            playerPosX = Math.max(10, Math.min(630, playerPosX));
+            playerPosY = Math.max(10, Math.min(470, playerPosY));
         }
 
         /**
          * Funkcja obsługująca zdobywanie poziomu przez gracza
          */
         function handleLevelUp() {
-            if (hero_xp >= xp_to_next_level) {
-                hero_lvl++;
+            if (heroXp >= xpToNextLvl) {
+                heroLvl++;
                 showLevelUpScreen();
-                enemy_hp = Math.ceil(base_enemy_hp * hero_lvl * 0.75);
-                enemy_xp = enemy_hp * base_enemy_xp * 0.4;
-                enemy_dmg = Math.ceil(base_enemy_dmg * enemy_hp * 0.75);
-                xp_to_next_level = Math.floor(xp_to_next_level * 2.1);
+                xpToNextLvl = Math.floor(xpToNextLvl * 1.5);
             }
         }
 
@@ -435,42 +512,55 @@
             const now = performance.now();
 
             for (let pickup of pickups) {
-                const dx_player = player_pos_x - pickup.x;
-                const dy_player = player_pos_y - pickup.y;
-                const distance_player = Math.sqrt(dx_player * dx_player + dy_player * dy_player);
+                const dxPlayer = playerPosX - pickup.x;
+                const dyPlayer = playerPosY - pickup.y;
+                const distanceToPlayer = Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer);
 
-                if(hero_hp < hero_max_hp) {
-                    if (distance_player <= 25) {
+                if(heroHp < heroMaxHp) {
+                    if (distanceToPlayer <= 25) {
                         pickups.splice(pickups.indexOf(pickup), 1);
-                        hero_hp += Math.min(Math.floor(0.25 * hero_max_hp), hero_max_hp - hero_hp);
+                        heroHp += Math.min(Math.floor(0.25 * heroMaxHp), heroMaxHp - heroHp);
                     }
                 }
             }
 
             for (let enemy of enemies) {
-                if (now - last_time_hit > HIT_COOLDOWN) {
-                    const dx_player = player_pos_x - enemy.x;
-                    const dy_player = player_pos_y - enemy.y;
-                    const distance_player = Math.sqrt(dx_player * dx_player + dy_player * dy_player);
+                if (now - lastTimeHit > HIT_COOLDOWN) {
+                    const dxPlayer = playerPosX - enemy.x;
+                    const dyPlayer = playerPosY - enemy.y;
+                    const distanceToPlayer = Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer);
 
-                    if (distance_player < 15) {
-                        hero_hp -= enemy_dmg;
-                        last_time_hit = now;
+                    if (distanceToPlayer <= enemy.hitRadius) {
+                        heroHp -= enemy.dmg;
+                        lastTimeHit = now;
                     }
                 }
 
                 for (let projectile of projectiles) {
                     const dx = enemy.x - projectile.x;
                     const dy = enemy.y - projectile.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const distanceToEnemy = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distance < 30) {
+                    if (distanceToEnemy <= enemy.hitRadius) {
                         projectiles.splice(projectiles.indexOf(projectile), 1);
-                        enemy.hp -= hero_dmg;
+                        enemy.hp -= heroDmg;
                         if (enemy.hp <= 0) {
-                            enemies.splice(enemies.indexOf(enemy), 1)
-                            hero_xp += enemy_xp;
-                            killed_enemies++;
+                            enemies.splice(enemies.indexOf(enemy), 1);
+                            heroXp += enemy.xp;
+                            switch (enemy.type) {
+                                case 'basic':
+                                    killedBasicEnemies++;
+                                    break;
+                                case 'fast':
+                                    killedFastEnemies++;
+                                    break;
+                                case 'tank':
+                                    killedTankEnemies++;
+                                    break;
+                                case 'boss':
+                                    killedBossEnemies++;
+                                    break;
+                            }
                             spawnPickup(enemy.x, enemy.y);
                             break;
                         }
@@ -488,25 +578,25 @@
             // HP
             ctx.fillStyle = 'rgb(255,0,0)';
             ctx.translate(0, 0);
-            ctx.fillRect(40, 5, 100, 10)
+            ctx.fillRect(40, 5, 100, 10);
             ctx.fillStyle = 'rgb(0,255,0)';
             ctx.translate(0, 0);
-            ctx.fillRect(40, 5, (hero_hp / hero_max_hp) * 100, 10)
+            ctx.fillRect(40, 5, (heroHp / heroMaxHp) * 100, 10);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 1;
             ctx.strokeRect(40, 5, 100, 10);
             ctx.fillStyle = 'rgb(0,0,0)';
             ctx.font = '14px sans-serif';
             ctx.fillText('HP', 20, 15);
-            ctx.fillText(hero_hp + ' / ' + hero_max_hp, 175, 15);
+            ctx.fillText(heroHp + ' / ' + heroMaxHp, 175, 15);
 
             // XP
             ctx.fillText('XP', 20, 30);
             ctx.fillStyle = 'rgba(160,0,255,0)';
-            ctx.fillRect(40, 20, 100, 10)
+            ctx.fillRect(40, 20, 100, 10);
             ctx.translate(0, 0);
             ctx.fillStyle = 'rgb(160,0,255)';
-            ctx.fillRect(40, 20, (hero_xp / xp_to_next_level) * 100, 10)
+            ctx.fillRect(40, 20, (heroXp / xpToNextLvl) * 100, 10);
             ctx.translate(0, 0);
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 1;
@@ -514,8 +604,7 @@
 
             // LVL
             ctx.font = '12px sans-serif';
-            ctx.fillText('LVL ' + hero_lvl, 20, 45);
-
+            ctx.fillText('LVL ' + heroLvl, 20, 45);
 
             ctx.restore();
         }
@@ -525,28 +614,28 @@
          */
         function redraw() {
             ctx.clearRect(0, 0, 640, 480);
-            handleMovement()
-            handleLevelUp()
+            handleMovement();
+            handleLevelUp();
 
             for (const pickup of pickups) {
                 drawPickup(pickup);
             }
-            draw_hero();
+            drawHero();
 
             for (const e of enemies) {
-                draw_enemy(e)
+                drawEnemy(e);
             }
-            update_enemy()
+            updateEnemy();
 
             for (const p of projectiles) {
-                draw_projectile(p);
+                drawProjectile(p);
             }
-            update_projectiles();
+            updateProjectiles();
 
             drawUI();
             checkCollisions();
 
-            if (hero_hp <= 0) {
+            if (heroHp <= 0) {
                 handleGameOver();
             }
             drawLevelUpScreen();
@@ -561,29 +650,41 @@
             window.addEventListener("click", mouseClickListener);
             canvas = document.getElementById('game');
             ctx = canvas.getContext('2d');
-            ctx.font = '48px sans-serif';
+
+            ctx.font = 'bold 48px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('READY PLAYER ONE?', 320, 240);
-            draw_hero();
+            ctx.fillText('SHAPE ASSAULT', 323, 223);
+
+            ctx.fillStyle = 'rgb(255, 60, 60)';
+            ctx.fillText('SHAPE', 208, 220)
+
+            ctx.fillStyle = 'rgb(61 255 76)';
+            ctx.fillText('ASSAULT', 416, 220)
+
+
+            ctx.fillStyle = 'rgb(0 0 0)';
+            ctx.font = '24px sans-serif';
+            ctx.fillText('Naciśnij dowolny przycisk, aby rozpocząć', 320, 260)
+            drawHero();
         }
         /**
          * Funkcja obsługi naciśnięcia przycisku
          */
         function keyDownListener(e) {
             keys[e.keyCode] = true;
-            clear_welcome();
+            clearWelcome();
 
-            if (game_over && e.keyCode === 82) {
+            if (gameOver && e.keyCode === 82) {
                 restartGame();
             }
 
-            if(!pause && (!game_over || !levelUpScreen) && e.keyCode === 27) {
+            if(!pause && (!gameOver || !levelUpScreen) && e.keyCode === 27) {
                 pause = true;
                 clearInterval(spawnInterval);
             } else if (pause && e.keyCode === 27) {
                 pause = false;
                 requestAnimationFrame(gameLoop);
-                spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
+                spawnInterval = setInterval(spawnWave, ENEMY_SPAWN_COOLDOWN);
             }
         }
 
@@ -599,15 +700,15 @@
          */
         function mouseMovementListener(e) {
             const rect = canvas.getBoundingClientRect();
-            mouse_x = e.clientX - rect.left;
-            mouse_y = e.clientY - rect.top;
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
         }
 
         /**
          * Funkcja obsługi naciśnięcia przycisku myszy
          */
         function mouseClickListener(e) {
-            clear_welcome()
+            clearWelcome()
             if (pause) return;
 
             if (levelUpScreen) {
@@ -618,14 +719,13 @@
                 return;
             }
 
-
-            const angle = Math.atan2(mouse_y - player_pos_y, mouse_x - player_pos_x);
+            const angle = Math.atan2(mouseY - playerPosY, mouseX - playerPosX);
             projectiles.push({
-                x: player_pos_x,
-                y: player_pos_y,
+                x: playerPosX,
+                y: playerPosY,
                 angle: angle,
                 speed: PROJECTILE_SPEED
-            })
+            });
         }
 
         /**
@@ -633,28 +733,27 @@
          */
         function restartGame() {
 
-            player_pos_x = 320
-            player_pos_y = 300;
-            mouse_x = 0;
-            mouse_y = 0;
-            hero_hp = 100
-            hero_max_hp = 100
-            hero_xp = 0;
-            hero_lvl = 1;
-            xp_to_next_level = 1000;
-            enemy_hp = base_enemy_hp;
-            enemy_xp = base_enemy_xp;
-            enemy_dmg = base_enemy_dmg;
-            last_time_hit = 0;
+            playerPosX = 320;
+            playerPosY = 300;
+            mouseX = 0;
+            mouseY = 0;
+            heroHp = 50;
+            heroMaxHp = 50;
+            heroXp = 0;
+            heroLvl = 1;
+            xpToNextLvl = 100;
+            lastTimeHit = 0;
+            heroSpeed = 1;
+            heroDmg = 1;
 
-            killed_enemies = 0;
+            killedEnemies = 0;
 
             enemies.length = 0;
             projectiles.length = 0;
             pickups.length = 0;
-            game_over = false;
+            gameOver = false;
             requestAnimationFrame(gameLoop);
-            spawnInterval = setInterval(spawnWave, enemySpawnCooldown)
+            spawnInterval = setInterval(spawnWave, ENEMY_SPAWN_COOLDOWN);
         }
 
         function drawPauseScreen() {
@@ -672,13 +771,13 @@
          * Główna pętla gry
          */
         function gameLoop() {
-            if (game_over) return;
+            if (gameOver) return;
             if (levelUpScreen) return;
             if (pause) {
-                drawPauseScreen()
+                drawPauseScreen();
                 return;
             }
-            redraw()
+            redraw();
             requestAnimationFrame(gameLoop);
         }
     </script>
