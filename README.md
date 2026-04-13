@@ -1,5 +1,15 @@
 # 🔺🟦🟡 ShapeAssault
 
+Link do zagrania: https://mixmaxmix20.github.io/shape-assault-webDev/
+
+Sterowanie:
+
+WASD - poruszanie się
+
+myszka - obracanie postaci i strzelanie
+
+ESC - pauza
+
 ---
 
 ## 🕹️ O projekcie
