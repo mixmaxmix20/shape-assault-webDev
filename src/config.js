@@ -5,17 +5,17 @@ export const CONFIG = Object.freeze({
     GAME_WIDTH: 800,
     GAME_HEIGHT: 600,
 
-    PROJECTILE_SPEED: 300,
+    PROJECTILE_SPEED: 1125,
     HERO_SAFE_ZONE: 180,
     HIT_COOLDOWN: 500,
     ENEMY_SPAWN_COOLDOWN: 1500,
     LEVEL_UP_SCREEN_DELAY: 750,
 
-    HERO_START_SPEED: 90,
+    HERO_START_SPEED: 225,
     HERO_START_HP: 50,
     HERO_START_DMG: 1,
     HERO_START_XP_TO_LEVEL: 100,
-    HERO_LEVEL_UP_SPEED_INC: 22.5,
+    HERO_LEVEL_UP_SPEED_INC: 56,
 
     SPAWN_RULES: {
         FAST_START: 2,
@@ -32,7 +32,7 @@ export const CONFIG = Object.freeze({
         basic: {
             type: 'basic',
             color: 'rgb(255, 60, 60)',
-            speed: 60,
+            speed: 225,
             hp: 1,
             xp: 10,
             dmg: 10,
@@ -41,7 +41,7 @@ export const CONFIG = Object.freeze({
         fast: {
             type: 'fast',
             color: 'rgb(255, 150, 0)',
-            speed: 120,
+            speed: 450,
             hp: 10,
             xp: 35,
             dmg: 20,
@@ -50,7 +50,7 @@ export const CONFIG = Object.freeze({
         tank: {
             type: 'tank',
             color: 'rgb(140, 20, 252)',
-            speed: 42,
+            speed: 160,
             hp: 50,
             xp: 100,
             dmg: 30,
@@ -59,7 +59,7 @@ export const CONFIG = Object.freeze({
         boss: {
             type: 'boss',
             color: 'rgb(30, 30, 30)',
-            speed: 21,
+            speed: 80,
             hp: 250,
             xp: 500,
             dmg: 75,
