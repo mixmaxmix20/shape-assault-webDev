@@ -297,31 +297,52 @@ export class Game {
     }
 
     /**
-     * Spawns a wave of enemies
+     * Checks if the number of active enemies is below the limit and spawns a new one
      */
-    spawnWave() {
+    tickSpawning() {
         if (this.state !== 'PLAYING') return;
 
-        const waveSize = 2 + Math.floor(Math.random() * 4);
-        for (let i = 0; i < waveSize; i++) {
+        if (this.enemies.length < this.getCurrentEnemyLimit()) {
             this.spawnEnemy();
         }
     }
 
     /**
-     * Spawns a single enemy outside player's safe zone
+     * Calculates the maximum number of active enemies based on hero level
+     * @returns {number}
+     */
+    getCurrentEnemyLimit() {
+        return CONFIG.ENEMY_BASE_LIMIT + Math.floor((this.hero.lvl - 1) / CONFIG.ENEMY_LIMIT_LEVEL_STEP);
+    }
+
+    /**
+     * Spawns a single enemy on a random screen border
      */
     spawnEnemy() {
-        let x, y, distance;
+        let x, y;
 
-        do {
-            x = Math.random() * CONFIG.GAME_WIDTH;
-            y = Math.random() * CONFIG.GAME_HEIGHT;
+        let edge = Math.floor(Math.random() * 4);
 
-            const dx = x - this.hero.x;
-            const dy = y - this.hero.y;
-            distance = Math.sqrt(dx * dx + dy * dy);
-        } while (distance < CONFIG.HERO_SAFE_ZONE);
+        switch (edge) {
+            case 0: // Top
+                x = Math.random() * CONFIG.GAME_WIDTH;
+                y = -20;
+                break;
+
+            case 1: // Right
+                x = CONFIG.GAME_WIDTH + 20;
+                y = Math.random() * CONFIG.GAME_HEIGHT;
+                break;
+
+            case 2: // Down
+                x = Math.random() * CONFIG.GAME_WIDTH;
+                y = CONFIG.GAME_HEIGHT + 20;
+                break;
+
+            case 3: // Left
+                x = -20;
+                y = Math.random() * CONFIG.GAME_HEIGHT;
+        }
 
         const type = this.getEnemyType();
         this.enemies.push(new Enemy(x, y, type));
@@ -375,7 +396,7 @@ export class Game {
 
     startSpawnTimer() {
         this.stopSpawnTimer();
-        this.spawnInterval = setInterval(() => this.spawnWave(), CONFIG.ENEMY_SPAWN_COOLDOWN);
+        this.spawnInterval = setInterval(() => this.tickSpawning(), CONFIG.ENEMY_SPAWN_COOLDOWN);
     }
 
     stopSpawnTimer() {
